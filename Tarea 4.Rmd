@@ -1,0 +1,104 @@
+```{r}
+library(arules)
+library(ggplot2)
+library(readxl)
+library(tidyverse)
+```
+
+```{r}
+data <- read_excel("/Users/jimmylarios/Desktop/Tarea 4/data.xlsx")
+data
+```
+
+
+```{r}
+data_fp <- data[, c("HEC_MES", "HEC_DEPTO", "VIC_EDAD", "VIC_ESCOLARIDAD", "VIC_EST_CIV", "VIC_GRUPET", "VIC_TRABAJA", "VIC_DEDICA", "AGR_EDAD", "AGR_ESCOLARIDAD")]
+data_fp_gt <- subset(data_fp, HEC_DEPTO==1)
+data.frame(1:ncol(data_fp_gt), colnames(data_fp_gt))
+data_fp_gt <- data_fp_gt[, -2]
+data.frame(1:ncol(data_fp_a_gt), colnames(data_fp_a_gt))
+
+# limpiando datos
+data_fp_gt[is.na(data_fp_gt)] <- -1
+```
+
+
+# Escolaridad y Edad
+```{r}
+cluster <-  (data_fp_gt, centers = 4)
+```
+
+
+```{r}
+ggplot(data_fp_gt, aes(x = VIC_ESCOLARIDAD, y = VIC_EDAD, color =as.factor(cluster$cluster)))
+  geom_point()+
+  geom_point(data = as.data.frame(cluster$centers), aes(x = VIC_ESCOLARIDAD, y = VIC_EDAD), color="black", size=4, shape=17)+
+  labs(title = "Escolaridad vs Edad") +
+  theme_minimal()
+```
+
+
+
+
+```{r}
+# limpieza de datos
+data_clean <- data %>%
+  filter(
+    VIC_EDAD >= 1 & VIC_EDAD <= 98,           # Excluir 99 (ignorado)
+    VIC_ESCOLARIDAD >= 10 & VIC_ESCOLARIDAD <= 59,  # Excluir 99 (ignorado)
+    TOTAL_HIJOS >= 0 & TOTAL_HIJOS <= 20,      # Excluir 99 (ignorado)
+    VIC_TRABAJA %in% c(1, 2)                   # Solo 1=Sí, 2=No (excluir 9)
+  ) %>%
+  select(VIC_EDAD, VIC_ESCOLARIDAD, TOTAL_HIJOS, VIC_TRABAJA) %>%
+  drop_na()  # Eliminar cualquier NA restante
+```
+
+```{r}
+# Limpieza de datos (remover valores ignorados)
+data_clean <- data %>%
+  filter(VIC_EDAD != 99, TOTAL_HIJOS != 99)
+
+# Aplicar K-Means con 3 clusters
+set.seed(123)  # Para reproducibilidad
+cluster <- kmeans(data_clean[, c("VIC_EDAD", "TOTAL_HIJOS")], centers = 3)
+
+# Visualización
+ggplot(data_clean, aes(x = TOTAL_HIJOS, y = VIC_EDAD, color = as.factor(cluster$cluster))) +
+  geom_point(alpha = 0.6, size = 2) +
+  geom_point(data = as.data.frame(cluster$centers), 
+             aes(x = TOTAL_HIJOS, y = VIC_EDAD), 
+             color = "black", size = 6, shape = 17) +
+  labs(title = "Clusters de Víctimas: Edad vs Número de Hijos",
+       subtitle = "Análisis de Violencia Intrafamiliar en Guatemala 2023",
+       x = "Total de Hijos",
+       y = "Edad de la Víctima",
+       color = "Cluster") +
+  theme_minimal() +
+  theme(legend.position = "right")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
